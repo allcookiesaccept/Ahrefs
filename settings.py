@@ -10,3 +10,26 @@ logging.basicConfig(
     "[%(asctime)s] - %(name)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+from dotenv import load_dotenv
+
+class DataManager:
+    __instance = None
+
+    @staticmethod
+    def get_instance():
+        if DataManager.__instance is None:
+            DataManager()
+        return DataManager.__instance
+
+    def __init__(self):
+        if DataManager.__instance is not None:
+            raise Exception("DataManger is a singleton class")
+        else:
+            load_dotenv()
+            self.token = self.get_token()
+            DataManager.__instance = self
+    def get_token(self):
+
+        token = os.getenv("TOKEN")
+        return token
