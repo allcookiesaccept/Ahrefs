@@ -55,9 +55,16 @@ class AhrefsTasks:
     def parse_url_date(self, date_string):
         try:
             date_object = dateutil.parser.parse(date_string)
-            return date_object.strftime("%Y-%m-%d")
+            current_date = datetime.now()
+
+            if date_object > current_date:
+                modified_date_object = date_object.replace(year=date_object.year - 1)
+                return modified_date_object.strftime("%Y-%m-%d")
+            else:
+                return date_object.strftime("%Y-%m-%d")
+
         except ValueError:
-            print("Неизвестный формат даты:", date_string)
+            logger.error("Неизвестный формат даты:", date_string)
             return None
 
     def __clean_to_domain(self, url: str) -> str:
@@ -98,7 +105,7 @@ class AhrefsTasks:
             key = (domain, today)
 
             if key not in data_dict:
-                actual_response = self.methods.get_domain_rating(target=url)
+                actual_response = self.methods.get_domain_rating(target=domain)
 
                 if actual_response is None:
                     dr = "--"
@@ -110,7 +117,7 @@ class AhrefsTasks:
                 data_dict[key] = {"dr": dr, "ar": ar}
 
                 compare_date_response = self.methods.get_domain_rating(
-                    target=url, date=date_to_compare
+                    target=domain, date=date_to_compare
                 )
 
                 if compare_date_response is None:
@@ -137,11 +144,15 @@ class AhrefsTasks:
             else:
                 logger.info("Take DR data from history")
                 compare_date_response = self.methods.get_domain_rating(
-                    target=url, date=date_to_compare
+                    target=domain, date=date_to_compare
                 )
-                compare_dr, compare_ar = self.methods.parse_domain_rating_response(
-                    compare_date_response.text
-                )
+                if compare_date_response is None:
+                    compare_dr = "--"
+                    compare_ar = "--"
+                else:
+                    compare_dr, compare_ar = self.methods.parse_domain_rating_response(
+                        compare_date_response.text
+                    )
                 data.append(
                     [
                         domain,
