@@ -1,10 +1,9 @@
 from .methods import AhrefsMethods
-from settings import BASE_DIR, logger, DataManager
-import requests, os, json
-from datetime import datetime, timedelta
+from settings import BASE_DIR, logger
+import os
+from datetime import datetime
 import dateutil.parser
 import pandas as pd
-from collections import defaultdict
 
 
 class AhrefsTasks:
@@ -108,6 +107,7 @@ class AhrefsTasks:
                     dr, ar = self.methods.parse_domain_rating_response(
                         actual_response.text
                     )
+                data_dict[key] = {"dr": dr, "ar": ar}
 
                 compare_date_response = self.methods.get_domain_rating(
                     target=url, date=date_to_compare
@@ -118,10 +118,10 @@ class AhrefsTasks:
                     compare_ar = "--"
 
                 else:
-                    compare_dr, compare_ar = self.methods.parse_domain_rating_response(compare_date_response.text)
+                    compare_dr, compare_ar = self.methods.parse_domain_rating_response(
+                        compare_date_response.text
+                    )
 
-
-                data_dict[key] = {"dr": dr, "ar": ar}
                 data.append(
                     [
                         domain,

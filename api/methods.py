@@ -1,14 +1,13 @@
-from settings import BASE_DIR, logger, DataManager
-import requests, os, json
-from datetime import datetime, timedelta
-import pandas as pd
-from collections import defaultdict
+from settings import logger, DataManager
+import requests, json
+from datetime import datetime
+
 
 dm = DataManager.get_instance()
 TOKEN = dm.token
 
-class AhrefsMethods:
 
+class AhrefsMethods:
     def __init__(self, token=TOKEN) -> None:
         self.token = token
         self.headers = {
@@ -19,14 +18,12 @@ class AhrefsMethods:
     def _logger_info(self, endpoint, params):
         target = params.get("target", "")
         date = params.get("date", "")
-        if params['target'] and params['date']:
+        if params["target"] and params["date"]:
             logger.info(f"Api {endpoint}\nDate:{date} Target: {target}")
         else:
             logger.info(f"Request {endpoint} api")
 
-
     def _send_request(self, endpoint, params) -> requests.models.Response:
-
         self._logger_info(endpoint, params)
 
         try:
@@ -39,7 +36,6 @@ class AhrefsMethods:
             return response
 
     def get_domain_rating(self, **kwargs) -> requests.models.Response:
-
         endpoint = "https://api.ahrefs.com/v3/site-explorer/domain-rating"
         params = {
             "output": kwargs.get("output", "json"),
@@ -67,7 +63,6 @@ class AhrefsMethods:
             return "--", "--"
 
     def get_backlinks_stats(self, **kwargs):
-
         endpoint = "https://api.ahrefs.com/v3/site-explorer/backlinks-stats"
 
         params = {
