@@ -52,10 +52,19 @@ class AhrefsMethods:
 
     def parse_domain_rating_response(self, response_text) -> tuple:
         logger.info("parsing domain rating")
-        response_to_json = json.loads(response_text)
-        domain_rating = response_to_json["domain_rating"]["domain_rating"]
-        ahrefs_rank = response_to_json["domain_rating"]["ahrefs_rank"]
-        return int(domain_rating), int(ahrefs_rank)
+
+        if response_text is None:
+            logger.warning("Response text is None, returning default values")
+            return "--", "--"
+
+        try:
+            response_to_json = json.loads(response_text)
+            domain_rating = response_to_json["domain_rating"]["domain_rating"]
+            ahrefs_rank = response_to_json["domain_rating"]["ahrefs_rank"]
+            return int(domain_rating), int(ahrefs_rank)
+        except (ValueError, KeyError):
+            logger.warning("Error parsing response text, returning default values")
+            return "--", "--"
 
     def get_backlinks_stats(self, **kwargs):
 

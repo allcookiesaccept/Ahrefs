@@ -4,12 +4,18 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 import logging
 
+log_filename = "application.log"
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(filename)s:%(lineno)d #%(levelname)-8s "
     "[%(asctime)s] - %(name)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_filename),
+        logging.StreamHandler()
+    ]
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("AhrefsApiLogger")
 
 from dotenv import load_dotenv
 
