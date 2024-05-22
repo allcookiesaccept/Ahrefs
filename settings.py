@@ -1,0 +1,12 @@
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(filename)s:%(lineno)d #%(levelname)-8s "
+    "[%(asctime)s] - %(name)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
