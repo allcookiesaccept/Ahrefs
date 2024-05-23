@@ -3,13 +3,8 @@ from api.tasks import AhrefsTasks
 import os
 from settings import DataManager
 
-
-
 dm = DataManager.get_instance()
 TOKEN = dm.token
-
-
-# TODO Дополнить проверку если compared_date уже был
 
 
 if __name__ == "__main__":
