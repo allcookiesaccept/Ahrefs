@@ -54,7 +54,7 @@ class AhrefsTasks:
 
     def parse_url_date(self, date_string):
         try:
-            date_object = dateutil.parser.parse(date_string)
+            date_object = datetime.strptime(date_string, "%d.%m.%Y")
             current_date = datetime.now()
 
             if date_object > current_date:

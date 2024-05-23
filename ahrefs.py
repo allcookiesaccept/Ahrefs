@@ -2,7 +2,6 @@ from api.methods import AhrefsMethods
 from api.tasks import AhrefsTasks
 import os
 
-# TODO разобраться с датами из будущего после обработки datetime (пока для таких -1 год)
 # TODO Дополнить проверку если compared_date уже был, не только на текущую дату
 
 
