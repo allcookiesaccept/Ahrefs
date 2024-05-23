@@ -1,13 +1,19 @@
 from api.methods import AhrefsMethods
 from api.tasks import AhrefsTasks
 import os
+from settings import DataManager
 
-# TODO разобраться с датами из будущего после обработки datetime (пока для таких -1 год)
-# TODO Дополнить проверку если compared_date уже был, не только на текущую дату
+
+
+dm = DataManager.get_instance()
+TOKEN = dm.token
+
+
+# TODO Дополнить проверку если compared_date уже был
 
 
 if __name__ == "__main__":
-    methods = AhrefsMethods()
+    methods = AhrefsMethods(TOKEN)
     tasks = AhrefsTasks(methods)
 
     file_name = "domain_ratings_dynamics_from_2024.xlsx"

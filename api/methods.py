@@ -1,14 +1,10 @@
-from settings import logger, DataManager
+from settings import logger
 import requests, json
 from datetime import datetime
 
 
-dm = DataManager.get_instance()
-TOKEN = dm.token
-
-
 class AhrefsMethods:
-    def __init__(self, token=TOKEN) -> None:
+    def __init__(self, token) -> None:
         self.token = token
         self.headers = {
             "Accept": "application/json, application/xml",
