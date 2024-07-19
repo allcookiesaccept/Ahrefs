@@ -13,14 +13,16 @@ class AhrefsMethods:
 
     def _logger_info(self, endpoint, params):
         target = params.get("target", "")
-        date = params.get("date", "")
-        if params["target"] and params["date"]:
-            logger.info(f"Api {endpoint}\nDate:{date} Target: {target}")
+        if target != "":
+            logger.info(f"Api {endpoint}\nTarget: {target}")
         else:
             logger.info(f"Request {endpoint} api")
 
     def _send_request(self, endpoint, params) -> requests.models.Response:
         self._logger_info(endpoint, params)
+
+        if 'where' in params:
+            params['where'] = json.dumps(params['where'])
 
         try:
             response = requests.get(endpoint, headers=self.headers, params=params)
@@ -30,6 +32,33 @@ class AhrefsMethods:
             return None
         else:
             return response
+
+    def get_best_links_data(self, **kwargs):
+        endpoint = "https://api.ahrefs.com/v3/site-explorer/all-backlinks"
+
+        params = {
+            "target": kwargs.get("target", "legalbet.by"),
+            "aggregation": kwargs.get("aggregation", "1_per_domain"),
+            "history": kwargs.get("history", "live"),
+            "mode": "domain",
+            "where": {
+                "and": [
+                    {"field": "is_content", "is": ["eq", True]},
+                    {"field": "links_external", "is": ["lte", 100]},
+                    {"field": "is_dofollow", "is": ["eq", True]},
+                    {"field": "is_text", "is": ["eq", True]},
+                    {"field": "traffic_domain", "is": ["gte", 1000]},
+                    {"field": "link_type", "is": ["eq", "text"]},
+                    {"field": "is_redirect", "is": ["eq", False]}
+                ],
+                "not": [
+                    {"field": "name_source", "is": ["phrase_match", "legalbet"]}
+                ]
+            },
+            "select": kwargs.get("select", "domain_rating_source,traffic_domain,link_type,is_dofollow,anchor,name_source,title"),
+        }
+        return self._send_request(endpoint, params)
+
 
     def get_domain_rating(self, **kwargs) -> requests.models.Response:
         endpoint = "https://api.ahrefs.com/v3/site-explorer/domain-rating"
@@ -53,7 +82,7 @@ class AhrefsMethods:
             response_to_json = json.loads(response_text)
             domain_rating = response_to_json["domain_rating"]["domain_rating"]
             ahrefs_rank = response_to_json["domain_rating"]["ahrefs_rank"]
-            return int(domain_rating), int(ahrefs_rank)
+            return domain_rating, ahrefs_rank
         except (ValueError, KeyError):
             logger.warning("Error parsing response text, returning default values")
             return "--", "--"
@@ -80,3 +109,16 @@ class AhrefsMethods:
         all_time_refdomains = response_to_json["metrics"]["all_time_refdomains"]
 
         return live, all_time, live_refdomains, all_time_refdomains
+
+
+    def get_all_backlinks(self, **kwargs):
+        ...
+
+
+"""
+from settings import DataManager
+dm = DataManager.get_instance()
+from api.methods import AhrefsMethods
+a = AhrefsMethods(dm.token)
+res = a.get_best_links_data()
+"""

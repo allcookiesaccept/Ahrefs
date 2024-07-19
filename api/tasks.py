@@ -4,11 +4,14 @@ import os
 from datetime import datetime
 import dateutil.parser
 import pandas as pd
+from .validator import InputValidator
+from collections import defaultdict
 
 
 class AhrefsTasks:
     def __init__(self, methods: AhrefsMethods):
-        self.methods = AhrefsMethods()
+        self.methods = methods
+        self.input_validator = InputValidator()
         self.input_files_folder = os.path.join(BASE_DIR, "input_files")
         self.output_files_folder = os.path.join(BASE_DIR, "output_files")
 
@@ -53,19 +56,8 @@ class AhrefsTasks:
         return df
 
     def parse_url_date(self, date_string):
-        try:
-            date_object = datetime.strptime(date_string, "%d.%m.%Y")
-            current_date = datetime.now()
+        return self.input_validator.validate_date(date_string)
 
-            if date_object > current_date:
-                modified_date_object = date_object.replace(year=date_object.year - 1)
-                return modified_date_object.strftime("%Y-%m-%d")
-            else:
-                return date_object.strftime("%Y-%m-%d")
-
-        except ValueError:
-            logger.error("Неизвестный формат даты:", date_string)
-            return None
 
     def __clean_to_domain(self, url: str) -> str:
         if url.find("/") == -1:
@@ -83,7 +75,8 @@ class AhrefsTasks:
             urls: list = self.load_urls_for_compare().to_dict("records")
 
         data = []
-        data_dict = {}
+        data_dict = defaultdict(dict)
+        today = datetime.today().strftime("%Y-%m-%d")
 
         columns = [
             "Domain",
@@ -96,8 +89,6 @@ class AhrefsTasks:
             "ARSecondDate",
         ]
 
-        today = datetime.today().strftime("%Y-%m-%d")
-
         for item in urls:
             url = item.get("url").strip()
             domain = self.__clean_to_domain(url)
@@ -106,7 +97,6 @@ class AhrefsTasks:
 
             if key not in data_dict:
                 actual_response = self.methods.get_domain_rating(target=domain)
-
                 if actual_response is None:
                     dr = "--"
                     ar = "--"
