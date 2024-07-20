@@ -6,45 +6,49 @@ import dateutil.parser
 import pandas as pd
 from .validator import InputValidator
 from collections import defaultdict
+from .data_loader import DataLoader
 
 
-class AhrefsTasks:
-    def __init__(self, methods: AhrefsMethods):
+from abc import ABC, abstractmethod
+
+class Tasks(ABC):
+    def __init__(self, methods: AhrefsMethods, data_loader: DataLoader):
         self.methods = methods
-        self.input_validator = InputValidator()
-        self.input_files_folder = os.path.join(BASE_DIR, "input_files")
-        self.output_files_folder = os.path.join(BASE_DIR, "output_files")
+        self.data_loader = data_loader
+        self.tasks = {
+            'date_comparison': DateComparisonTask(methods, data_loader),
+            'actual_data_rating': ActualDataRating(methods, data_loader),
+            'best_links_check': BestLinksTask(methods, data_loader),
+        }
 
-    def load_only_urls(self, filename: str = "urls.txt") -> list:
-        file_path = os.path.join(self.input_files_folder, filename)
-        with open(f"{file_path}", "r") as file:
-            urls = file.read().splitlines()
+    @abstractmethod
+    def execute(self, *args, **kwargs):
+        pass
 
-        self.urls = [url.strip() for url in urls]
+    @staticmethod
+    def _clean_to_domain(url: str) -> str:
+        if "//" in url:
+            return url.split("//")[1].split("/")[0]
+        return url.split("/")[0]
 
-        return self.urls
 
-    def load_urls_for_compare(self, filename: str = "urls_for_compare.csv"):
-        file_path = os.path.join(self.input_files_folder, filename)
 
-        df = pd.DataFrame(columns=["url", "date"])
+    def execute_task(self, task_name, *args, **kwargs):
+        if task_name not in self.tasks:
+            raise ValueError(f"Unknown task: {task_name}")
+        return self.tasks[task_name].execute(*args, **kwargs)
 
-        if filename.find(".csv") > -1:
-            df = pd.read_csv(file_path, sep=";")
 
-        if filename.find(".xlsx") > -1:
-            df = pd.read_excel(file_path)
+class BestLinksTask(Tasks):
+    def execute(self, urls=None):
 
-        return df
-
-    def collect_actual_data_rating(self, urls=None) -> pd.DataFrame:
         if not urls:
-            self.load_only_urls()
+            urls: list = self.data_loader.load_urls()
 
         data = []
-        columns = ["url", "domain_rating", "ahrefs_rank"]
+        columns = ["domain", "domain_rating", "ahrefs_rank"]
 
-        for url in self.urls:
+        for url in urls:
             response = self.methods.get_domain_rating(target=url)
             domain_rating, ahrefs_rank = self.methods.parse_domain_rating_response(
                 response.text
@@ -55,24 +59,11 @@ class AhrefsTasks:
 
         return df
 
-    def parse_url_date(self, date_string):
-        return self.input_validator.validate_date(date_string)
+class DateComparisonTask(Tasks):
 
-
-    def __clean_to_domain(self, url: str) -> str:
-        if url.find("/") == -1:
-            return url
-
-        if url.find("//") > -1:
-            domain = url.split("//")[1].split("/")[0]
-            return domain
-        else:
-            domain = url.split("/")[0]
-            return domain
-
-    def compare_data_rating(self, urls=None):
+    def execute(self, urls=None):
         if not urls:
-            urls: list = self.load_urls_for_compare().to_dict("records")
+            urls: list = self.data_loader.load_urls_with_date().to_dict("records")
 
         data = []
         data_dict = defaultdict(dict)
@@ -91,8 +82,8 @@ class AhrefsTasks:
 
         for item in urls:
             url = item.get("url").strip()
-            domain = self.__clean_to_domain(url)
-            date_to_compare = self.parse_url_date(item.get("date"))
+            domain = self._clean_to_domain(url)
+            date_to_compare = InputValidator.validate_date(item.get("date"))
             key = (domain, today)
 
             if key not in data_dict:
@@ -155,6 +146,27 @@ class AhrefsTasks:
                         compare_ar,
                     ]
                 )
+
+        df = pd.DataFrame(data, columns=columns)
+
+        return df
+
+
+class ActualDataRating(Tasks):
+
+    def execute(self, urls=None) -> pd.DataFrame:
+        if not urls:
+            urls = self.data_loader.load_urls()
+
+        data = []
+        columns = ["url", "domain_rating", "ahrefs_rank"]
+
+        for url in urls:
+            response = self.methods.get_domain_rating(target=url)
+            domain_rating, ahrefs_rank = self.methods.parse_domain_rating_response(
+                response.text
+            )
+            data.append([url, domain_rating, ahrefs_rank])
 
         df = pd.DataFrame(data, columns=columns)
 
