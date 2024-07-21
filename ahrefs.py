@@ -1,5 +1,7 @@
-from api.methods import AhrefsMethods
-from api.tasks import AhrefsTasks
+from api.methods import Methods
+from api.parser import ResponseParser
+from api.tasks import BusinessTask
+from api.data_loader import DataLoader
 import os
 from settings import DataManager
 
@@ -9,8 +11,14 @@ TOKEN = dm.token
 class Ahrefs:
 
     def __init__(self, token=TOKEN):
-        self.methods = AhrefsMethods(token)
-        self.tasks = AhrefsTasks(self.methods)
+        self.data_loader = DataLoader()
+        self.methods = Methods(token)
+        self.parser = ResponseParser()
+        self.tasks = BusinessTask(self.methods, self.data_loader, self.parser)
+
+    def __call__(self, *args, **kwargs):
+        return self
+
 
 
 if __name__ == "__main__":

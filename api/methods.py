@@ -3,7 +3,7 @@ import requests, json
 from datetime import datetime
 
 
-class AhrefsMethods:
+class Methods:
     def __init__(self, token) -> None:
         self.token = token
         self.headers = {
@@ -11,7 +11,7 @@ class AhrefsMethods:
             "Authorization": f"Bearer {self.token}",
         }
 
-    def _logger_info(self, endpoint, params):
+    def __method_logger_info(self, endpoint, params):
         target = params.get("target", "")
         if target != "":
             logger.info(f"Api {endpoint}\nTarget: {target}")
@@ -19,7 +19,7 @@ class AhrefsMethods:
             logger.info(f"Request {endpoint} api")
 
     def _send_request(self, endpoint, params) -> requests.models.Response:
-        self._logger_info(endpoint, params)
+        self.__method_logger_info(endpoint, params)
 
         if 'where' in params:
             params['where'] = json.dumps(params['where'])
@@ -59,21 +59,7 @@ class AhrefsMethods:
         }
         return self._send_request(endpoint, params)
 
-    def parse_best_links_data(self, response_text: str) -> tuple:
 
-        logger.info("extracting first 50 from best backlinks")
-
-        if response_text is None:
-            logger.warning("Response text is None, returning default values")
-            return "--", "--"
-
-        try:
-            response_to_json = json.loads(response_text)
-            backlinks = response_to_json['backlinks']
-            return backlinks
-        except (ValueError, KeyError):
-            logger.warning("Error parsing response text, returning default values")
-            return "--", "--"
     def get_best_refdomains_data(self, **kwargs):
         endpoint = "https://api.ahrefs.com/v3/site-explorer/refdomains"
 
@@ -107,21 +93,7 @@ class AhrefsMethods:
 
         return self._send_request(endpoint, params)
 
-    def parse_domain_rating_response(self, response_text) -> tuple:
-        logger.info("parsing domain rating")
 
-        if response_text is None:
-            logger.warning("Response text is None, returning default values")
-            return "--", "--"
-
-        try:
-            response_to_json = json.loads(response_text)
-            domain_rating = response_to_json["domain_rating"]["domain_rating"]
-            ahrefs_rank = response_to_json["domain_rating"]["ahrefs_rank"]
-            return domain_rating, ahrefs_rank
-        except (ValueError, KeyError):
-            logger.warning("Error parsing response text, returning default values")
-            return "--", "--"
 
     def get_backlinks_stats(self, **kwargs):
         endpoint = "https://api.ahrefs.com/v3/site-explorer/backlinks-stats"
@@ -135,19 +107,4 @@ class AhrefsMethods:
         }
 
         return self._send_request(endpoint, params)
-
-    def parse_backlink_stats(self, response_text) -> tuple:
-        logger.info("parsing backlinks stats")
-        response_to_json = json.loads(response_text)
-        live = response_to_json["metrics"]["live"]
-        all_time = response_to_json["metrics"]["all_time"]
-        live_refdomains = response_to_json["metrics"]["live_refdomains"]
-        all_time_refdomains = response_to_json["metrics"]["all_time_refdomains"]
-
-        return live, all_time, live_refdomains, all_time_refdomains
-
-
-    def get_all_backlinks(self, **kwargs):
-        ...
-
 

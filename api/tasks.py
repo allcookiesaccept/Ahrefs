@@ -1,4 +1,5 @@
-from .methods import AhrefsMethods
+from .methods import Methods
+from .parser import ResponseParser
 from settings import BASE_DIR, logger
 import os
 from datetime import datetime
@@ -11,15 +12,17 @@ from .data_loader import DataLoader
 
 from abc import ABC, abstractmethod
 
-class Tasks(ABC):
-    def __init__(self, methods: AhrefsMethods, data_loader: DataLoader):
+
+class Task(ABC):
+    def __init__(
+        self,
+        methods: Methods = Methods,
+        data_loader: DataLoader = DataLoader,
+        parser: ResponseParser = ResponseParser,
+    ):
         self.methods = methods
         self.data_loader = data_loader
-        self.tasks = {
-            'date_comparison': DateComparisonTask(methods, data_loader),
-            'actual_data_rating': ActualDataRating(methods, data_loader),
-            'best_links_check': BestLinksTask(methods, data_loader),
-        }
+        self.parser = parser
 
     @abstractmethod
     def execute(self, *args, **kwargs):
@@ -32,6 +35,18 @@ class Tasks(ABC):
         return url.split("/")[0]
 
 
+class BusinessTask:
+    def __init__(
+        self, methods: Methods, data_loader: DataLoader, parser: ResponseParser
+    ):
+        self.methods = methods
+        self.data_loader = data_loader
+        self.parser = parser
+        self.tasks = {
+            "date_comparison": DateComparisonTask(methods, data_loader, parser),
+            "actual_data_rating": ActualDataRating(methods, data_loader, parser),
+            "best_links_check": BestLinksTask(methods, data_loader, parser),
+        }
 
     def execute_task(self, task_name, *args, **kwargs):
         if task_name not in self.tasks:
@@ -39,28 +54,25 @@ class Tasks(ABC):
         return self.tasks[task_name].execute(*args, **kwargs)
 
 
-class BestLinksTask(Tasks):
+class BestLinksTask(Task):
     def execute(self, urls=None):
-
         if not urls:
             urls: list = self.data_loader.load_urls()
 
         data = []
-        columns = ["domain", "domain_rating", "ahrefs_rank"]
+        columns = ["domain", "limit50response", ">=50"]
 
         for url in urls:
-            response = self.methods.get_domain_rating(target=url)
-            domain_rating, ahrefs_rank = self.methods.parse_domain_rating_response(
-                response.text
-            )
-            data.append([url, domain_rating, ahrefs_rank])
+            response = self.methods.get_best_links_data(target=url)
+            backlinks = self.parser.parse_best_links_data(response.text)
+            data.append([url, len(backlinks), len(backlinks) >= 50])
 
         df = pd.DataFrame(data, columns=columns)
 
         return df
 
-class DateComparisonTask(Tasks):
 
+class DateComparisonTask(Task):
     def execute(self, urls=None):
         if not urls:
             urls: list = self.data_loader.load_urls_with_date().to_dict("records")
@@ -92,7 +104,7 @@ class DateComparisonTask(Tasks):
                     dr = "--"
                     ar = "--"
                 else:
-                    dr, ar = self.methods.parse_domain_rating_response(
+                    dr, ar = self.parser.parse_domain_rating_response(
                         actual_response.text
                     )
                 data_dict[key] = {"dr": dr, "ar": ar}
@@ -106,7 +118,7 @@ class DateComparisonTask(Tasks):
                     compare_ar = "--"
 
                 else:
-                    compare_dr, compare_ar = self.methods.parse_domain_rating_response(
+                    compare_dr, compare_ar = self.parser.parse_domain_rating_response(
                         compare_date_response.text
                     )
 
@@ -131,7 +143,7 @@ class DateComparisonTask(Tasks):
                     compare_dr = "--"
                     compare_ar = "--"
                 else:
-                    compare_dr, compare_ar = self.methods.parse_domain_rating_response(
+                    compare_dr, compare_ar = self.parser.parse_domain_rating_response(
                         compare_date_response.text
                     )
                 data.append(
@@ -152,8 +164,7 @@ class DateComparisonTask(Tasks):
         return df
 
 
-class ActualDataRating(Tasks):
-
+class ActualDataRating(Task):
     def execute(self, urls=None) -> pd.DataFrame:
         if not urls:
             urls = self.data_loader.load_urls()
@@ -163,7 +174,7 @@ class ActualDataRating(Tasks):
 
         for url in urls:
             response = self.methods.get_domain_rating(target=url)
-            domain_rating, ahrefs_rank = self.methods.parse_domain_rating_response(
+            domain_rating, ahrefs_rank = self.parser.parse_domain_rating_response(
                 response.text
             )
             data.append([url, domain_rating, ahrefs_rank])
