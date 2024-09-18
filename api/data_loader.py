@@ -20,11 +20,3 @@ class DataLoader:
         else:
             raise ValueError("Unsupported file format")
 
-
-"""
-from settings import DataManager
-dm = DataManager.get_instance()
-from api.methods import AhrefsMethods
-a = AhrefsMethods(dm.token)
-res = a.get_best_links_data()
-"""
