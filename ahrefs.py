@@ -24,7 +24,6 @@ class Ahrefs:
 if __name__ == "__main__":
 
     ahrefs = Ahrefs()
-    file_name = "satellites.xlsx"
-    file_path = os.path.join(ahrefs.tasks.output_files_folder, file_name)
-    df = ahrefs.tasks.compare_data_rating()
-    df.to_excel(file_path, index=False)
+    file_name = "meta_2.xlsx"
+    df = ahrefs.tasks.execute_task("get_backlinks")
+    df.to_excel(file_name, index=False)

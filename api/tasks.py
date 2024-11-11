@@ -46,6 +46,7 @@ class BusinessTask:
             "date_comparison": DateComparisonTask(methods, data_loader, parser),
             "actual_data_rating": ActualDataRating(methods, data_loader, parser),
             "best_links_check": BestLinksTask(methods, data_loader, parser),
+            "get_backlinks": GetBacklinks(methods, data_loader, parser),
         }
 
     def execute_task(self, task_name, *args, **kwargs):
@@ -53,6 +54,25 @@ class BusinessTask:
             raise ValueError(f"Unknown task: {task_name}")
         return self.tasks[task_name].execute(*args, **kwargs)
 
+
+class GetBacklinks(Task):
+
+    def execute(self, urls=None):
+        if not urls:
+            urls: list = self.data_loader.load_urls()
+
+        data = []
+        columns = ['url', 'live', 'all_time', 'live_refdomains', 'all_time_refdomains']
+        for url in urls:
+            response = self.methods.get_backlinks_stats(target=url)
+            if response:
+                live, all_time, live_refdomains, all_time_refdomains = self.parser.parse_backlink_stats(response.text)
+                data.append([url, live, all_time, live_refdomains, all_time_refdomains])
+            else:
+                data.append([url, '--', '--', '--', '--'])
+        df = pd.DataFrame(data, columns=columns)
+
+        return df
 
 class BestLinksTask(Task):
     def execute(self, urls=None):
@@ -99,7 +119,7 @@ class DateComparisonTask(Task):
             key = (domain, today)
 
             if key not in data_dict:
-                actual_response = self.methods.get_domain_rating(target=domain)
+                actual_response = self.methods.get_backlinks_stats(target=url)
                 if actual_response is None:
                     dr = "--"
                     ar = "--"
