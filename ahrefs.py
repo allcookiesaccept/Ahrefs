@@ -24,6 +24,6 @@ class Ahrefs:
 if __name__ == "__main__":
 
     ahrefs = Ahrefs()
-    file_name = "meta_2.xlsx"
-    df = ahrefs.tasks.execute_task("get_backlinks")
+    file_name = "meta_shkola_bettings.xlsx"
+    df = ahrefs.tasks.execute_task("get_pages_by_traffic")
     df.to_excel(file_name, index=False)

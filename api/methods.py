@@ -108,3 +108,16 @@ class Methods:
 
         return self._send_request(endpoint, params)
 
+    def get_pages_by_traffic(self, **kwargs):
+        endpoint = "https://api.ahrefs.com/v3/site-explorer/pages-by-traffic"
+
+        params = {
+            "mode": kwargs.get("mode", "exact"),
+            "output": kwargs.get("output", "json"),
+            "protocol": kwargs.get("protocol", "both"),
+            "country": kwargs.get("country", "by"),
+            "target": kwargs.get("target", "https://ahrefs.com/"),
+
+        }
+
+        return self._send_request(endpoint, params)

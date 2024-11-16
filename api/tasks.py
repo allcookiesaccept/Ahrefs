@@ -47,6 +47,7 @@ class BusinessTask:
             "actual_data_rating": ActualDataRating(methods, data_loader, parser),
             "best_links_check": BestLinksTask(methods, data_loader, parser),
             "get_backlinks": GetBacklinks(methods, data_loader, parser),
+            "get_pages_by_traffic": PagesByTraffic(methods, data_loader, parser),
         }
 
     def execute_task(self, task_name, *args, **kwargs):
@@ -55,24 +56,60 @@ class BusinessTask:
         return self.tasks[task_name].execute(*args, **kwargs)
 
 
-class GetBacklinks(Task):
+class PagesByTraffic(Task):
+    def execute(self, urls=None) -> pd.DataFrame:
+        if not urls:
+            urls = self.data_loader.load_urls()
 
+        data = []
+        columns = [
+            "url",
+            "range0_pages",
+            "range100_traffic",
+            "range100_pages",
+            "range1k_traffic",
+            "range1k_pages",
+            "range5k_traffic",
+            "range5k_pages",
+            "range10k_traffic",
+            "range10k_pages",
+            "range10k_plus_traffic",
+            "range10k_plus_pages",
+        ]
+
+        for url in urls:
+            response = self.methods.get_pages_by_traffic(target=url)
+            values = self.parser.parse_pages_by_traffic(response.text)
+            data.append([url, *values])
+
+        df = pd.DataFrame(data, columns=columns)
+
+        return df
+
+
+class GetBacklinks(Task):
     def execute(self, urls=None):
         if not urls:
             urls: list = self.data_loader.load_urls()
 
         data = []
-        columns = ['url', 'live', 'all_time', 'live_refdomains', 'all_time_refdomains']
+        columns = ["url", "live", "all_time", "live_refdomains", "all_time_refdomains"]
         for url in urls:
             response = self.methods.get_backlinks_stats(target=url)
             if response:
-                live, all_time, live_refdomains, all_time_refdomains = self.parser.parse_backlink_stats(response.text)
+                (
+                    live,
+                    all_time,
+                    live_refdomains,
+                    all_time_refdomains,
+                ) = self.parser.parse_backlink_stats(response.text)
                 data.append([url, live, all_time, live_refdomains, all_time_refdomains])
             else:
-                data.append([url, '--', '--', '--', '--'])
+                data.append([url, "--", "--", "--", "--"])
         df = pd.DataFrame(data, columns=columns)
 
         return df
+
 
 class BestLinksTask(Task):
     def execute(self, urls=None):
