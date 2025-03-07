@@ -37,7 +37,7 @@ class Methods:
         endpoint = "https://api.ahrefs.com/v3/site-explorer/all-backlinks"
 
         params = {
-            "target": kwargs.get("target", "legalbet.by"),
+            "target": kwargs.get("target", "https://ahrefs.com/"),
             "aggregation": kwargs.get("aggregation", "1_per_domain"),
             "history": kwargs.get("history", "live"),
             "limit": kwargs.get("limit", 50),
@@ -64,7 +64,7 @@ class Methods:
         endpoint = "https://api.ahrefs.com/v3/site-explorer/refdomains"
 
         params = {
-            "target": kwargs.get("target", "legalbet.by"),
+            "target": kwargs.get("target", "https://ahrefs.com/"),
             "aggregation": kwargs.get("aggregation", "1_per_domain"),
             "history": kwargs.get("history", "live"),
 
